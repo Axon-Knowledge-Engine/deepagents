@@ -14,6 +14,52 @@ StateSchemaType = Type[StateSchema]
 
 base_prompt = """You have access to a number of standard tools that you can learn how to use by always as the first step Call the list_research_skills() tool to get a list of all available tools and their parameters.
 
+CRITICAL WORKFLOW: Before starting ANY task, you MUST:
+1. Call write_todos() to create a task plan
+2. List available skills first  
+3. Save all findings to files as you work
+4. Update todos as you complete steps
+5. FOR EVERY SINGLE TASK YOUR CREATE A TODO LIST USING THE write_todos() SKILL AND UPDATE IT AS YOU COMPLETE STEPS.
+
+## Skill Execution Pattern
+
+To use any research skill, you MUST follow this two-step pattern:
+
+1. **First, always call `list_research_skills()`** to see all available skills with their exact names and required parameters
+2. **Then call `execute_research_skill(skill_name="exact_name", kwargs={params})`** with the precise skill name and parameters
+
+**Best Practice**: Never guess skill names. Always list skills first to get the exact spelling and parameter requirements. This prevents the endless error loops of trying incorrect names.
+
+**Examples**:
+
+# Step 1: Discover what's available
+list_research_skills()
+
+# Step 2: Use exact skill name from the list
+execute_research_skill(
+    skill_name="search_papers", 
+    kwargs={"query": "drug mechanisms", "limit": 10}
+)
+
+# Another example:
+execute_research_skill(
+    skill_name="write_todos", 
+    kwargs={
+        "todos": [
+            {"id": "1", "description": "List available research skills to understand capabilities", "completed": True},
+            {"id": "2", "description": "Search papers for diethylcarbamazine mechanism of action", "completed": False},
+            # ... rest of todos
+        ]
+    }
+)
+
+execute_research_skill(
+    skill_name="update_todos", 
+    kwargs={'todo_id': '2', 'completed': True}
+)
+
+Remember: The skill registry contains the authoritative list of available capabilities. Always consult it first before attempting execution.
+
 ## `write_todos` skill
 
 You have access to the `write_todos` skill tools to help you manage and plan tasks. Use these tools VERY frequently to ensure that you are tracking your tasks and giving the user visibility into your progress.
@@ -25,7 +71,6 @@ It is critical that you mark todos as completed as soon as you are done with a t
 
 Think of the file system tools (`write_file`, `read_file`, `edit_file`, `ls`) as your **persistent memory and knowledge workspace**. Use these tools to create a living knowledge base that grows with each task - write research findings to `.md` files, save analysis results to `.txt` files, create documentation, store intermediate calculations, and maintain project notes that you can reference later. This file system persists across conversations, so treat it as your **external brain** where you can store detailed information, create structured reports, build comprehensive documentation, and maintain context that would otherwise be lost. Always save important discoveries, create summary files for complex analyses, and build up a repository of knowledge that makes you more effective over time. Think of each file as a specialized memory container - use descriptive filenames, organize related information together, and regularly update files as you learn more. The file system is not just for final outputs, but for **thinking out loud**, preserving your reasoning process, and building knowledge that compounds over time.
 
-**Example workflow**: When researching drug mechanisms, first create `drug_research_notes.md` to capture initial findings, then `compound_analysis.txt` for detailed chemical data, `pathway_connections.md` for discovered relationships, and `research_questions.txt` for follow-up investigations. As you work, continuously update these files with new insights, cross-reference between them, and create `project_summary.md` that synthesizes everything. Later sessions can build on this foundation by reading existing files first, then expanding the knowledge base further.
 """
 
 
@@ -62,7 +107,7 @@ def create_deep_agent(
         checkpointer: Optional checkpointer for persisting agent state between runs.
     """
     
-    prompt = instructions + base_prompt
+    prompt = base_prompt + instructions
     built_in_tools = []#[write_todos, write_file, read_file, ls, edit_file]
     if model is None:
         model = get_default_model()
@@ -88,7 +133,7 @@ def create_deep_agent(
         selected_post_model_hook = create_interrupt_hook(interrupt_config)
     else:
         selected_post_model_hook = None
-    
+    #print(f" [DEBUG]: all system prompt: {prompt}")
     return create_react_agent(
         model,
         prompt=prompt,
