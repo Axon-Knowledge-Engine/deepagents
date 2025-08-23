@@ -12,17 +12,21 @@ from langgraph.prebuilt import create_react_agent
 StateSchema = TypeVar("StateSchema", bound=DeepAgentState)
 StateSchemaType = Type[StateSchema]
 
-base_prompt = """You have access to a number of standard tools
+base_prompt = """You have access to a number of standard tools that you can learn how to use by always as the first step Call the list_research_skills() tool to get a list of all available tools and their parameters.
 
-## `write_todos`
+## `write_todos` skill
 
-You have access to the `write_todos` tools to help you manage and plan tasks. Use these tools VERY frequently to ensure that you are tracking your tasks and giving the user visibility into your progress.
+You have access to the `write_todos` skill tools to help you manage and plan tasks. Use these tools VERY frequently to ensure that you are tracking your tasks and giving the user visibility into your progress.
 These tools are also EXTREMELY helpful for planning tasks, and for breaking down larger complex tasks into smaller steps. If you do not use this tool when planning, you may forget to do important tasks - and that is unacceptable.
 
 It is critical that you mark todos as completed as soon as you are done with a task. Do not batch up multiple tasks before marking them as completed.
-## `task`
 
-- When doing web search, prefer to use the `task` tool in order to reduce context usage."""
+## File System as Memory & Knowledge Base
+
+Think of the file system tools (`write_file`, `read_file`, `edit_file`, `ls`) as your **persistent memory and knowledge workspace**. Use these tools to create a living knowledge base that grows with each task - write research findings to `.md` files, save analysis results to `.txt` files, create documentation, store intermediate calculations, and maintain project notes that you can reference later. This file system persists across conversations, so treat it as your **external brain** where you can store detailed information, create structured reports, build comprehensive documentation, and maintain context that would otherwise be lost. Always save important discoveries, create summary files for complex analyses, and build up a repository of knowledge that makes you more effective over time. Think of each file as a specialized memory container - use descriptive filenames, organize related information together, and regularly update files as you learn more. The file system is not just for final outputs, but for **thinking out loud**, preserving your reasoning process, and building knowledge that compounds over time.
+
+**Example workflow**: When researching drug mechanisms, first create `drug_research_notes.md` to capture initial findings, then `compound_analysis.txt` for detailed chemical data, `pathway_connections.md` for discovered relationships, and `research_questions.txt` for follow-up investigations. As you work, continuously update these files with new insights, cross-reference between them, and create `project_summary.md` that synthesizes everything. Later sessions can build on this foundation by reading existing files first, then expanding the knowledge base further.
+"""
 
 
 def create_deep_agent(
@@ -38,8 +42,7 @@ def create_deep_agent(
 ):
     """Create a deep agent.
 
-    This agent will by default have access to a tool to write todos (write_todos),
-    and then four file editing tools: write_file, ls, read_file, edit_file.
+
 
     Args:
         tools: The additional tools the agent should have access to.
@@ -60,7 +63,7 @@ def create_deep_agent(
     """
     
     prompt = instructions + base_prompt
-    built_in_tools = [write_todos, write_file, read_file, ls, edit_file]
+    built_in_tools = []#[write_todos, write_file, read_file, ls, edit_file]
     if model is None:
         model = get_default_model()
     state_schema = state_schema or DeepAgentState
